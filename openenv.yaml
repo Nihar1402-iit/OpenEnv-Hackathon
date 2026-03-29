@@ -1,0 +1,141 @@
+name: CRM Query Environment
+version: 1.0.0
+description: OpenEnv-compliant CRM Query Environment for multi-step reasoning tasks
+
+environment:
+  name: CRMQueryEnv
+  python_version: "3.11"
+  package: app.env
+  class: CRMQueryEnv
+
+compliance:
+  openenv_version: 1.0
+  implements:
+    - step
+    - reset
+    - state
+
+api:
+  observation:
+    type: Observation
+    properties:
+      task_id: string
+      task_description: string
+      step_count: integer
+      max_steps: integer
+      available_tools: array
+      last_action_result: object
+      tables_summary: object
+      done: boolean
+      message: string
+
+  action:
+    type: Action
+    properties:
+      tool: string
+      arguments: object
+    required:
+      - tool
+      - arguments
+
+  reward:
+    type: Reward
+    properties:
+      value: number
+      components: object
+      message: string
+    constraints:
+      value_range: [-10.0, 10.0]
+
+  state:
+    type: State
+    properties:
+      current_task_id: string
+      step_count: integer
+      max_steps: integer
+      history: array
+      done: boolean
+      final_answer: object
+
+  info:
+    type: Info
+    properties:
+      task_id: string
+      episode_reward: number
+      intermediate_results: object
+
+tasks:
+  - task_id: task_easy_001
+    difficulty: easy
+    description: "Find the customer with ID C005 and return their customer_id."
+    max_steps: 5
+
+  - task_id: task_medium_001
+    difficulty: medium
+    description: "Find all customers who are either Gold tier OR have purchased a Laptop. Return their customer_ids."
+    max_steps: 10
+
+  - task_id: task_hard_001
+    difficulty: hard
+    description: "Find all Gold-tier customers who have at least one HIGH priority OPEN support ticket. Return their customer_ids."
+    max_steps: 15
+
+tools:
+  search_customers:
+    description: Search customers by filters
+    parameters:
+      customer_id: string
+      name: string
+      email: string
+      tier: string
+      phone: string
+
+  search_orders:
+    description: Search orders by filters
+    parameters:
+      order_id: string
+      customer_id: string
+      product: string
+      status: string
+
+  search_tickets:
+    description: Search support tickets by filters
+    parameters:
+      ticket_id: string
+      customer_id: string
+      priority: string
+      status: string
+
+  submit_answer:
+    description: Submit final answer
+    parameters:
+      customer_ids: array
+
+reward_shaping:
+  valid_schema: 0.5
+  narrowing_search: 0.3
+  answer_accuracy: 3.0
+  repeated_query: -0.5
+  empty_result: -0.2
+  false_positives: -0.2
+  step_inefficiency: -0.5
+  invalid_schema: -2.0
+
+grading:
+  metric: set_overlap
+  formula: "|correct ∩ predicted| / |correct|"
+  scale: [0.0, 1.0]
+  deterministic: true
+
+dataset:
+  customers: 20
+  orders: 30
+  tickets: 30
+  deterministic: true
+  hardcoded: true
+
+constraints:
+  max_episodes: unlimited
+  timeout_per_episode: 300
+  deterministic_behavior: true
+  no_randomness: true
