@@ -42,6 +42,7 @@ dependencies = [
 
 [project.scripts]
 openenv-crm-server = "server.app:main"
+server = "server.app:main"
 
 [project.urls]
 Homepage = "https://huggingface.co/spaces/NiharS/OpenEnv-CRM-Query-final"
