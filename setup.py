@@ -50,4 +50,9 @@ setup(
     include_package_data=True,
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
+    entry_points={
+        "console_scripts": [
+            "openenv-crm-server=server.app:main",
+        ],
+    },
 )
