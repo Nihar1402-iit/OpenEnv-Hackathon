@@ -6,7 +6,7 @@ This script serves as the baseline agent for the hackathon submission.
 It uses OpenAI's API to interact with the CRM Query environment.
 
 Environment Variables:
-    OPENAI_API_KEY (required): OpenAI API key
+    HF_TOKEN (required): OpenAI-compatible API key (used as api_key)
     API_BASE_URL (optional): Custom API base URL (defaults to OpenAI official)
     MODEL_NAME (optional): Model identifier (defaults to gpt-3.5-turbo)
 
@@ -37,54 +37,69 @@ from app.utils import extract_customer_ids
 
 
 def get_api_config() -> Dict[str, str]:
+    """Load API configuration from required environment variables.
+
+    Required env vars:
+        API_BASE_URL
+        MODEL_NAME
+        HF_TOKEN
+
+    (OPENAI_API_KEY is also accepted as a fallback for compatibility.)
     """
-    Load API configuration from environment variables.
-    
-    Returns:
-        Dictionary with api_key, api_base, and model_name
-        
-    Raises:
-        ValueError: If OPENAI_API_KEY is not set
-    """
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError(
-            "OPENAI_API_KEY environment variable not set. "
-            "Please set your OpenAI API key before running this script."
-        )
-    
-    api_base = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-    model_name = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-    
+        raise ValueError("HF_TOKEN (or OPENAI_API_KEY) environment variable not set")
+
+    api_base = os.getenv("API_BASE_URL")
+    if not api_base:
+        raise ValueError("API_BASE_URL environment variable not set")
+
+    model_name = os.getenv("MODEL_NAME")
+    if not model_name:
+        raise ValueError("MODEL_NAME environment variable not set")
+
     return {
         "api_key": api_key,
         "api_base": api_base,
-        "model_name": model_name
+        "model_name": model_name,
     }
 
 
 def initialize_openai_client(config: Dict[str, str]) -> Any:
-    """
-    Initialize OpenAI client with custom configuration.
-    
-    Args:
-        config: API configuration dictionary
-        
-    Returns:
-        Configured OpenAI client
-    """
+    """Initialize OpenAI Client (required by rules)."""
     try:
-        import openai
-    except ImportError:
-        raise ImportError(
-            "openai package not installed. "
-            "Install with: pip install openai"
-        )
-    
-    openai.api_key = config["api_key"]
-    openai.api_base = config["api_base"]
-    
-    return openai
+        from openai import OpenAI
+    except ImportError as e:
+        raise ImportError("openai package not installed. Install with: pip install openai") from e
+
+    return OpenAI(api_key=config["api_key"], base_url=config["api_base"])
+
+
+def _log_start(run_id: str, api_base_url: str, model_name: str, task_ids: list[str]) -> None:
+    print("[START]")
+    print(f"run_id={run_id}")
+    print(f"api_base_url={api_base_url}")
+    print(f"model_name={model_name}")
+    print(f"num_tasks={len(task_ids)}")
+    print("task_ids=" + ",".join(task_ids))
+
+
+def _log_step(task_id: str, step_idx: int, tool: str, arguments: Dict[str, Any], reward: float, done: bool) -> None:
+    print("[STEP]")
+    print(f"task_id={task_id}")
+    print(f"step={step_idx}")
+    print(f"tool={tool}")
+    print("arguments=" + json.dumps(arguments, sort_keys=True))
+    print(f"reward={reward}")
+    print(f"done={str(done).lower()}")
+
+
+def _log_end(run_id: str, average_score: float, total_time_sec: float, task_scores: Dict[str, float]) -> None:
+    print("[END]")
+    print(f"run_id={run_id}")
+    print(f"average_score={average_score}")
+    print(f"total_time_sec={total_time_sec}")
+    print("task_scores=" + json.dumps(task_scores, sort_keys=True))
 
 
 def run_inference_on_task(
@@ -152,7 +167,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
 
         try:
             # Call OpenAI API
-            response = openai_client.ChatCompletion.create(
+            response = openai_client.chat.completions.create(
                 model=model_name,
                 messages=messages,
                 temperature=0.1,
@@ -276,6 +291,8 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
 
     # Get all tasks
     tasks = get_tasks()
+    run_id = str(int(time.time()))
+    _log_start(run_id, config["api_base"], config["model_name"], [t.task_id for t in tasks])
     results = {}
     scores = {}
     total_time = time.time()
