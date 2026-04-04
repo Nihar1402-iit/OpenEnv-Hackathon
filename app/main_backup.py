@@ -4,7 +4,6 @@ FastAPI server for CRM Query Environment.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 from typing import Dict, Any, List
 from .env import CRMQueryEnv
 from .models import Task, Observation, Reward
@@ -29,124 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# HTML Response for root path
-@app.get("/", response_class=HTMLResponse)
-def root():
-    """Root endpoint with API documentation"""
-    return """
-    <html>
-        <head>
-            <title>OpenEnv CRM Query Environment</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 40px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                }
-                .container {
-                    background: rgba(0, 0, 0, 0.7);
-                    padding: 30px;
-                    border-radius: 10px;
-                    max-width: 800px;
-                    margin: 0 auto;
-                }
-                h1 { color: #667eea; }
-                h2 { margin-top: 20px; }
-                .endpoint {
-                    background: rgba(255, 255, 255, 0.1);
-                    padding: 15px;
-                    margin: 10px 0;
-                    border-radius: 5px;
-                    border-left: 4px solid #667eea;
-                }
-                code {
-                    background: rgba(0, 0, 0, 0.5);
-                    padding: 2px 6px;
-                    border-radius: 3px;
-                }
-                .status {
-                    color: #4ade80;
-                    font-weight: bold;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>🏢 OpenEnv Business CRM Query Environment</h1>
-                <p>An OpenEnv-compliant environment for training AI agents to perform complex enterprise database queries.</p>
-                
-                <h2>📊 Status: <span class="status">✅ Running</span></h2>
-                
-                <h2>📚 Available Endpoints</h2>
-                
-                <div class="endpoint">
-                    <strong>GET /health</strong><br>
-                    Health check endpoint. Returns {"status": "healthy"}
-                </div>
-                
-                <div class="endpoint">
-                    <strong>GET /tasks</strong><br>
-                    Get all available tasks and action schema
-                </div>
-                
-                <div class="endpoint">
-                    <strong>POST /reset</strong><br>
-                    Reset environment to initial state. Returns initial observation
-                </div>
-                
-                <div class="endpoint">
-                    <strong>POST /step</strong><br>
-                    Execute action in environment. Send: {"tool": "...", "arguments": {...}}
-                </div>
-                
-                <div class="endpoint">
-                    <strong>GET /state</strong><br>
-                    Get current environment state
-                </div>
-                
-                <div class="endpoint">
-                    <strong>POST /grader</strong><br>
-                    Grade the current episode (after submitting answer)
-                </div>
-                
-                <div class="endpoint">
-                    <strong>POST /plan</strong><br>
-                    Generate execution plan using planner agent
-                </div>
-                
-                <div class="endpoint">
-                    <strong>POST /execute_plan</strong><br>
-                    Execute a structured plan
-                </div>
-                
-                <h2>🔗 Links</h2>
-                <ul>
-                    <li><a href="/docs" style="color: #667eea;">Interactive API Docs (Swagger UI)</a></li>
-                    <li><a href="/redoc" style="color: #667eea;">API Documentation (ReDoc)</a></li>
-                    <li><a href="https://github.com/Nihar1402-iit/OpenEnv-Hackathon" style="color: #667eea;">GitHub Repository</a></li>
-                </ul>
-                
-                <h2>📖 Quick Start</h2>
-                <p>Test the environment with curl:</p>
-                <code>curl -X POST http://localhost:8000/reset -H "Content-Type: application/json" -d '{}'</code>
-            </div>
-        </body>
-    </html>
-    """
-
-
-@app.get("/health")
-def health_check() -> Dict[str, str]:
-    """
-    Health check endpoint.
-    
-    Returns:
-        Status dict
-    """
-    return {"status": "healthy"}
 
 
 @app.get("/tasks")
@@ -319,41 +200,80 @@ def generate_plan() -> Dict[str, Any]:
     try:
         from .multi_agent import PlannerAgent
         
-        api_key = None
-        planner = PlannerAgent(api_key=api_key)
+        if not env.current_task_id:
+            raise HTTPException(status_code=400, detail="Environment not reset")
+        
         task = get_task_by_id(env.current_task_id)
-        plan = planner.plan(task.description)
+        planner = PlannerAgent()
+        
+        plan = planner.generate_plan(
+            task_id=env.current_task_id,
+            task_description=task.description,
+            tables_summary=env.state().tables_summary,
+            max_steps=task.max_steps
+        )
         
         return {
-            "task_id": env.current_task_id,
             "plan": plan.model_dump(),
             "message": "Plan generated successfully"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Plan generation failed: {str(e)}")
 
 
 @app.post("/execute_plan")
-def execute_plan(plan: Dict[str, Any]) -> Dict[str, Any]:
+def execute_full_pipeline() -> Dict[str, Any]:
     """
-    Execute a structured plan.
-    
-    Args:
-        plan: Plan dict with steps
+    Run full multi-agent pipeline: planner → executor.
     
     Returns:
-        Execution results
+        Complete execution results
     """
     try:
-        from .multi_agent import ExecutorAgent
+        from .multi_agent import Coordinator
         
-        executor = ExecutorAgent(env)
-        results = executor.execute_plan(plan)
+        if not env.current_task_id:
+            raise HTTPException(status_code=400, detail="Environment not reset")
+        
+        coordinator = Coordinator()
+        results = coordinator.run_pipeline(env, max_iterations=1)
         
         return {
             "results": results,
-            "final_observation": env.state().model_dump(),
-            "message": "Plan executed successfully"
+            "message": "Multi-agent pipeline executed",
+            "episode_reward": env.episode_reward,
+            "steps_taken": env.step_count
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Pipeline execution failed: {str(e)}")
+
+
+@app.get("/baseline")
+def run_baseline_agent() -> Dict[str, Any]:
+    """
+    Run baseline agent on all tasks.
+    
+    Returns:
+        Scores for each task and average
+    """
+    from .baseline import run_baseline
+    
+    try:
+        results = run_baseline()
+        return {
+            "results": results,
+            "message": "Baseline agent completed"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Baseline failed: {str(e)}")
+
+
+@app.get("/health")
+def health_check() -> Dict[str, str]:
+    """Health check endpoint."""
+    return {"status": "healthy", "environment": "CRM Query Environment"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
