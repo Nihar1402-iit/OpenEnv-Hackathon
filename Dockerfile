@@ -13,17 +13,16 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code and configuration
+# Copy app code
 COPY app/ ./app/
 COPY openenv.yaml .
-COPY inference.py .
-COPY README.md .
-
-# Create __init__.py if it doesn't exist
-RUN touch app/__init__.py || true
 
 # Expose port
 EXPOSE 8000
 
-# Run FastAPI app with optimized settings for HF Spaces
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# Run FastAPI app
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

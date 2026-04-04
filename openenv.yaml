@@ -1,4 +1,4 @@
-environment_name: CRM Query Environment
+name: CRM Query Environment
 version: 1.0.0
 description: OpenEnv-compliant CRM Query Environment for multi-step reasoning tasks
 
@@ -15,30 +15,8 @@ compliance:
     - reset
     - state
 
-action_space:
-  type: "Discrete (4 tools)"
-  tools:
-    - name: search_customers
-      description: "Search customers by filters"
-    - name: search_orders
-      description: "Search orders by filters"
-    - name: search_tickets
-      description: "Search support tickets by filters"
-    - name: submit_answer
-      description: "Submit final answer with customer_ids"
-
-observation_space:
-  type: "Dict"
-  components:
-    - task_id: string
-    - task_description: string
-    - step_count: integer
-    - available_tools: array
-    - last_action_result: object
-    - tables_summary: database_metadata
-
 api:
-  observation_schema:
+  observation:
     type: Observation
     properties:
       task_id: string
@@ -51,7 +29,7 @@ api:
       done: boolean
       message: string
 
-  action_schema:
+  action:
     type: Action
     properties:
       tool: string
