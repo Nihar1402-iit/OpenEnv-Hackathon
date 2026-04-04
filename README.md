@@ -1,3 +1,14 @@
+---
+title: OpenEnv CRM Query Environment
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_file: hf_space_app.py
+pinned: false
+---
+
+<!-- filepath: /Users/niharshah/Desktop/Meta Hackathon/README.md -->
 # Business CRM Query Environment
 
 ## Overview
