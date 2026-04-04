@@ -25,5 +25,5 @@ RUN touch app/__init__.py || true
 # Expose port
 EXPOSE 8000
 
-# Run FastAPI app
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "60"]
+# Run FastAPI app with optimized settings for HF Spaces
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
