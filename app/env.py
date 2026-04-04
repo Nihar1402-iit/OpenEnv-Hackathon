@@ -104,7 +104,7 @@ class CRMQueryEnv:
         Execute action in environment.
         
         Args:
-            action: Action dict with 'tool' and 'arguments' keys
+            action: Action dict with 'tool' and 'arguments' keys, or Action Pydantic model
         
         Returns:
             (observation, reward, done, info)
@@ -118,9 +118,14 @@ class CRMQueryEnv:
         self.step_count += 1
         task = get_task_by_id(self.current_task_id)
 
-        # Validate action
-        tool = action.get("tool", "")
-        arguments = action.get("arguments", {})
+        # Validate action - handle both dict and Pydantic models
+        if isinstance(action, dict):
+            tool = action.get("tool", "")
+            arguments = action.get("arguments", {})
+        else:
+            # Pydantic model
+            tool = action.tool
+            arguments = action.arguments
 
         # Execute action
         action_result: Dict[str, Any] = {}

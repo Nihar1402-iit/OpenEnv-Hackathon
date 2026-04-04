@@ -34,7 +34,7 @@ class RewardCalculator:
         Calculate dense reward with shape.
         
         Args:
-            action: The action taken
+            action: The action taken (dict or Pydantic model)
             action_result: Result of the action
             done: Whether episode ended
             task_ground_truth: Ground truth answer
@@ -49,8 +49,14 @@ class RewardCalculator:
         components: Dict[str, float] = {}
         base_reward = 0.0
 
-        tool = action.get("tool", "")
-        arguments = action.get("arguments", {})
+        # Handle both dict and Pydantic model
+        if isinstance(action, dict):
+            tool = action.get("tool", "")
+            arguments = action.get("arguments", {})
+        else:
+            # Pydantic model
+            tool = action.tool
+            arguments = action.arguments
 
         # Schema validation reward
         if tool in ["search_customers", "search_orders", "search_tickets", "submit_answer"]:
@@ -103,7 +109,12 @@ class RewardCalculator:
 
         # Submit answer reward
         if tool == "submit_answer":
-            submitted = action.get("arguments", {}).get("customer_ids", [])
+            # Handle both dict and Pydantic model
+            if isinstance(action, dict):
+                submitted = action.get("arguments", {}).get("customer_ids", [])
+            else:
+                submitted = action.arguments.get("customer_ids", [])
+            
             ground_truth = task_ground_truth.get("customer_ids", [])
 
             if isinstance(submitted, list) and isinstance(ground_truth, list):
