@@ -13,9 +13,14 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# Copy app code and configuration
 COPY app/ ./app/
 COPY openenv.yaml .
+COPY inference.py .
+COPY README.md .
+
+# Create __init__.py if it doesn't exist
+RUN touch app/__init__.py || true
 
 # Expose port
 EXPOSE 8000
