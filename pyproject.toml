@@ -43,6 +43,11 @@ dependencies = [
 [project.scripts]
 openenv-crm-server = "server.app:main"
 
+[project.urls]
+Homepage = "https://huggingface.co/spaces/NiharS/OpenEnv-CRM-Query-final"
+Repository = "https://github.com/Nihar1402-iit/OpenEnv-Hackathon"
+Documentation = "https://github.com/Nihar1402-iit/OpenEnv-Hackathon#readme"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
@@ -56,11 +61,6 @@ test = [
     "pytest-cov>=4.1.0",
     "httpx>=0.24.0",
 ]
-
-[project.urls]
-Homepage = "https://huggingface.co/spaces/NiharS/OpenEnv-CRM-Query-final"
-Repository = "https://github.com/Nihar1402-iit/OpenEnv-Hackathon"
-Documentation = "https://github.com/Nihar1402-iit/OpenEnv-Hackathon#readme"
 
 [tool.setuptools]
 packages = ["app", "server"]
