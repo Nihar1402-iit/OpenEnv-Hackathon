@@ -69,16 +69,22 @@ tasks:
     difficulty: easy
     description: "Find the customer with ID C005 and return their customer_id."
     max_steps: 5
+    ground_truth:
+      customer_ids: ["C005"]
 
   - task_id: task_medium_001
     difficulty: medium
     description: "Find all customers who are either Gold tier OR have purchased a Laptop. Return their customer_ids."
     max_steps: 10
+    ground_truth:
+      customer_ids: ["C001", "C004", "C006", "C009", "C011", "C014", "C016", "C019"]
 
   - task_id: task_hard_001
     difficulty: hard
     description: "Find all Gold-tier customers who have at least one HIGH priority OPEN support ticket. Return their customer_ids."
     max_steps: 15
+    ground_truth:
+      customer_ids: ["C001", "C004", "C006", "C009", "C011", "C014", "C016", "C019"]
 
 tools:
   search_customers:
