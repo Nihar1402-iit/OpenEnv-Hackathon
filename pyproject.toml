@@ -40,6 +40,9 @@ dependencies = [
     "numpy>=1.24.0",
 ]
 
+[project.scripts]
+openenv-crm-server = "server.app:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
