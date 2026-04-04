@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include openenv.yaml
+include requirements.txt
+include pyproject.toml
+recursive-include app *.py
+recursive-include tests *.py
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude .DS_Store
