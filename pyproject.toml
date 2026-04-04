@@ -63,7 +63,7 @@ Repository = "https://github.com/Nihar1402-iit/OpenEnv-Hackathon"
 Documentation = "https://github.com/Nihar1402-iit/OpenEnv-Hackathon#readme"
 
 [tool.setuptools]
-packages = ["app"]
+packages = ["app", "server"]
 
 [tool.black]
 line-length = 88
