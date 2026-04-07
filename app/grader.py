@@ -24,19 +24,19 @@ class TaskGrader:
             submitted_answer: Agent's submitted answer
         
         Returns:
-            Score in [0.0, 1.0]
+            Score in (0.0, 1.0) - strictly between 0 and 1
         """
         ground_truth = task.ground_truth.get("customer_ids", [])
         predicted = submitted_answer.get("customer_ids", [])
 
         if not isinstance(ground_truth, list) or not isinstance(predicted, list):
-            return 0.0
+            return 0.05
 
         ground_truth_set: Set[str] = set(ground_truth)
         predicted_set: Set[str] = set(predicted)
 
         if len(ground_truth_set) == 0:
-            return 1.0 if len(predicted_set) == 0 else 0.0
+            return 0.95 if len(predicted_set) == 0 else 0.05
 
         intersection = ground_truth_set & predicted_set
         score = len(intersection) / len(ground_truth_set)
@@ -44,9 +44,12 @@ class TaskGrader:
         # Penalize false positives
         false_positives = len(predicted_set - ground_truth_set)
         if false_positives > 0:
-            score = max(0.0, score - false_positives * 0.1)
+            score = max(0.05, score - false_positives * 0.1)
 
-        return max(0.0, min(1.0, score))
+        # Clamp to (0.0, 1.0) - strictly between
+        # Map to range [0.05, 0.95] to ensure strictly between 0 and 1
+        clamped = max(0.05, min(0.95, score))
+        return clamped
 
     @staticmethod
     def grade_multiple_tasks(

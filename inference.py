@@ -258,7 +258,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
     if final_answer:
         score = TaskGrader.grade_task(task, final_answer)
     else:
-        score = 0.0
+        score = 0.05  # Minimum non-zero score for cases with no answer
 
     if verbose:
         print(f"\nTask Score: {score:.2%}")
@@ -342,9 +342,9 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
                 print(f"\nFailed to run task {task_id}: {str(e)}")
             results[task_id] = {
                 "error": str(e),
-                "score": 0.0
+                "score": 0.05  # Minimum non-zero score for error cases
             }
-            scores[task_id] = 0.0
+            scores[task_id] = 0.05
 
     total_time = time.time() - total_time
 
