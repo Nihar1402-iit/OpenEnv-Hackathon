@@ -31,6 +31,28 @@ app.add_middleware(
 )
 
 
+# Startup and shutdown events for debugging and HF Spaces compatibility
+@app.on_event("startup")
+async def startup_event():
+    """Log startup information for debugging."""
+    print("=" * 80)
+    print("🚀 OpenEnv CRM Query Environment - STARTUP")
+    print("=" * 80)
+    print(f"✅ App Title: {app.title}")
+    print(f"✅ App Version: {app.version}")
+    print(f"✅ Total Routes: {len([r for r in app.routes if hasattr(r, 'path')])}")
+    print(f"✅ Environment initialized: {type(env).__name__}")
+    print("✅ Server ready to accept requests")
+    print("=" * 80)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Log shutdown information for debugging."""
+    print("=" * 80)
+    print("🛑 OpenEnv CRM Query Environment - SHUTDOWN")
+    print("=" * 80)
+
+
 # HTML Response for root path
 @app.get("/", response_class=HTMLResponse)
 def root():
