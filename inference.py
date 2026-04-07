@@ -192,6 +192,16 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
             # Execute action in environment
             obs, reward, done, info = env.step(action)
 
+            # Log structured STEP marker
+            _log_step(
+                task_id=task_id,
+                step_idx=step,
+                tool=action.get('tool', ''),
+                arguments=action.get('arguments', {}),
+                reward=float(reward.value),
+                done=bool(done)
+            )
+
             if verbose:
                 print(f"  Reward: {reward.value:.2f}")
                 print(f"  Result: {obs.last_action_result}")
@@ -211,6 +221,15 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
         except Exception as e:
             if verbose:
                 print(f"Step {step}: Error - {str(e)}")
+            # Log error step with empty action
+            _log_step(
+                task_id=task_id,
+                step_idx=step,
+                tool="error",
+                arguments={"error": str(e)},
+                reward=0.0,
+                done=False
+            )
             # Continue to next step even on error
             break
         
@@ -314,6 +333,9 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
 
     # Compute aggregate statistics
     average_score = TaskGrader.compute_average_score(scores)
+
+    # Log structured END marker
+    _log_end(run_id, average_score, total_time, scores)
 
     if verbose:
         print(f"\n{'='*60}")
