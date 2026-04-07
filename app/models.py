@@ -125,3 +125,6 @@ class Task(BaseModel):
     ground_truth: Dict[str, Any]
     max_steps: int
     action_schema: Dict[str, Any]
+    grader: Optional[callable] = Field(default=None, exclude=True, description="Grader function for this task")
+    
+    model_config = {"arbitrary_types_allowed": True}

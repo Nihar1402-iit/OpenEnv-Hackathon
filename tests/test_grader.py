@@ -35,7 +35,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert score == 1.0
+        # Perfect match should clamp to 0.95 (strictly less than 1.0)
+        assert score == 0.95
 
     def test_partial_match(self) -> None:
         """Test partial answer match."""
@@ -53,7 +54,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert score == 0.0
+        # No match should clamp to 0.05 (strictly greater than 0.0)
+        assert score == 0.05
 
     def test_empty_ground_truth(self) -> None:
         """Test empty ground truth."""
@@ -62,7 +64,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert score == 1.0
+        # Empty ground truth with empty answer should clamp to 0.95 (strictly less than 1.0)
+        assert score == 0.95
 
     def test_empty_answer_with_ground_truth(self) -> None:
         """Test empty answer with ground truth."""
@@ -71,7 +74,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert score == 0.0
+        # Empty answer should clamp to 0.05 (strictly greater than 0.0)
+        assert score == 0.05
 
     def test_superset_answer(self) -> None:
         """Test answer with extra items (penalized for false positives)."""
@@ -90,7 +94,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert 0.0 <= score <= 1.0
+        # Score should be strictly between 0.05 and 0.95
+        assert 0.05 <= score <= 0.95
 
     def test_invalid_answer_format(self) -> None:
         """Test invalid answer format."""
@@ -99,7 +104,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert score == 0.0
+        # Invalid format should clamp to 0.05 (strictly greater than 0.0)
+        assert score == 0.05
 
     def test_missing_customer_ids_key(self) -> None:
         """Test missing customer_ids key."""
@@ -108,7 +114,8 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        assert score == 0.0
+        # Missing key should clamp to 0.05 (strictly greater than 0.0)
+        assert score == 0.05
 
     def test_grade_multiple_tasks(self) -> None:
         """Test grading multiple tasks."""
@@ -123,7 +130,8 @@ class TestTaskGrader:
 
         # This should handle partial task dict
         task1_score = TaskGrader.grade_task(task1, answers.get("test_task", {}))
-        assert task1_score == 1.0
+        # Perfect match should clamp to 0.95 (strictly less than 1.0)
+        assert task1_score == 0.95
 
     def test_compute_average_score(self) -> None:
         """Test average score computation."""

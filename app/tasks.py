@@ -8,7 +8,10 @@ from .models import Task
 
 def get_tasks() -> List[Task]:
     """Return all task definitions."""
-    return [
+    # Import graders here to avoid circular imports
+    from .graders import get_grader
+    
+    tasks = [
         Task(
             task_id="task_easy_001",
             difficulty="easy",
@@ -22,7 +25,8 @@ def get_tasks() -> List[Task]:
                         "customer_id": {"type": "string"}
                     }
                 }
-            }
+            },
+            grader=get_grader("task_easy_001")
         ),
         Task(
             task_id="task_medium_001",
@@ -43,7 +47,8 @@ def get_tasks() -> List[Task]:
                         "product": {"type": "string"}
                     }
                 }
-            }
+            },
+            grader=get_grader("task_medium_001")
         ),
         Task(
             task_id="task_hard_001",
@@ -65,7 +70,8 @@ def get_tasks() -> List[Task]:
                         "status": {"type": "string"}
                     }
                 }
-            }
+            },
+            grader=get_grader("task_hard_001")
         ),
         Task(
             task_id="task_extreme_001",
@@ -89,9 +95,12 @@ def get_tasks() -> List[Task]:
                         "customer_id": {"type": "string"}
                     }
                 }
-            }
+            },
+            grader=get_grader("task_extreme_001")
         ),
     ]
+    
+    return tasks
 
 
 def get_task_by_id(task_id: str) -> Task:
