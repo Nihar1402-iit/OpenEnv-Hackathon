@@ -37,23 +37,40 @@ from app.utils import extract_customer_ids
 
 
 def get_api_config() -> Dict[str, str]:
-    """Load API configuration from environment variables with sensible defaults.
+    """Load API configuration from environment variables.
 
+    Required env vars:
+        HF_TOKEN: OpenAI-compatible API key (or OPENAI_API_KEY)
+    
     Optional env vars (with defaults):
-        HF_TOKEN or OPENAI_API_KEY (default: "test-key-for-demo")
         API_BASE_URL (default: "https://api.openai.com/v1")
         MODEL_NAME (default: "gpt-3.5-turbo")
-
-    If HF_TOKEN is not set, inference will run in demo mode without real API calls.
+    
+    Optional for docker deployments:
+        LOCAL_IMAGE_NAME: Docker image name (when using from_docker_image())
     """
-    api_key = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or "test-key-for-demo"
+    # HF_TOKEN is required - no default
+    api_key = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "HF_TOKEN or OPENAI_API_KEY environment variable is required. "
+            "Please set: export HF_TOKEN='your-api-key'"
+        )
+    
+    # API_BASE_URL has default
     api_base = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+    
+    # MODEL_NAME has default
     model_name = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+    
+    # LOCAL_IMAGE_NAME is optional (for docker deployments)
+    local_image_name = os.getenv("LOCAL_IMAGE_NAME")
 
     return {
         "api_key": api_key,
         "api_base": api_base,
         "model_name": model_name,
+        "local_image_name": local_image_name,
     }
 def initialize_openai_client(config: Dict[str, str]) -> Any:
     """Initialize OpenAI Client (required by rules)."""
