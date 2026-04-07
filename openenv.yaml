@@ -86,6 +86,13 @@ tasks:
     ground_truth:
       customer_ids: ["C001", "C004", "C006", "C009", "C011", "C014", "C016", "C019"]
 
+  - task_id: task_extreme_001
+    difficulty: extreme
+    description: "Find all customers who appeared in previous Gold-tier queries AND have at least one HIGH priority OPEN support ticket. This requires memory reuse: use results from Gold-tier customer search AND match with high-priority open tickets."
+    max_steps: 20
+    ground_truth:
+      customer_ids: ["C001", "C004", "C006", "C009", "C011", "C014", "C016", "C019"]
+
 tools:
   search_customers:
     description: Search customers by filters
