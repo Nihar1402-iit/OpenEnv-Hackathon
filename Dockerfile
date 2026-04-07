@@ -1,10 +1,8 @@
-# Use python:3.11 as fallback if slim is unavailable
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies with retries for network resilience
-# Using apt-get with retry logic for better reliability
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
@@ -14,12 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies with aggressive retry logic
-RUN pip install --no-cache-dir --retries 10 --default-timeout 100 -r requirements.txt || \
-    (echo "First pip install attempt failed, waiting and retrying..." && sleep 10 && \
-    pip install --no-cache-dir --retries 10 --default-timeout 100 -r requirements.txt) || \
-    (echo "Second pip install attempt failed, final retry with longer timeout..." && sleep 15 && \
-    pip install --no-cache-dir --retries 15 --default-timeout 120 -r requirements.txt)
+# Install Python dependencies with network resilience
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --default-timeout 100 -r requirements.txt
 
 # Copy app code
 COPY app/ ./app/
