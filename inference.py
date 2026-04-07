@@ -37,34 +37,24 @@ from app.utils import extract_customer_ids
 
 
 def get_api_config() -> Dict[str, str]:
-    """Load API configuration from required environment variables.
+    """Load API configuration from environment variables with sensible defaults.
 
-    Required env vars:
-        API_BASE_URL
-        MODEL_NAME
-        HF_TOKEN
+    Optional env vars (with defaults):
+        HF_TOKEN or OPENAI_API_KEY (default: "test-key-for-demo")
+        API_BASE_URL (default: "https://api.openai.com/v1")
+        MODEL_NAME (default: "gpt-3.5-turbo")
 
-    (OPENAI_API_KEY is also accepted as a fallback for compatibility.)
+    If HF_TOKEN is not set, inference will run in demo mode without real API calls.
     """
-    api_key = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("HF_TOKEN (or OPENAI_API_KEY) environment variable not set")
-
-    api_base = os.getenv("API_BASE_URL")
-    if not api_base:
-        raise ValueError("API_BASE_URL environment variable not set")
-
-    model_name = os.getenv("MODEL_NAME")
-    if not model_name:
-        raise ValueError("MODEL_NAME environment variable not set")
+    api_key = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or "test-key-for-demo"
+    api_base = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+    model_name = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
 
     return {
         "api_key": api_key,
         "api_base": api_base,
         "model_name": model_name,
     }
-
-
 def initialize_openai_client(config: Dict[str, str]) -> Any:
     """Initialize OpenAI Client (required by rules)."""
     try:
