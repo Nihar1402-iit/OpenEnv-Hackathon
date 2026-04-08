@@ -22,7 +22,7 @@ def _grade_answer(ground_truth_ids: list, submitted_ids: list) -> float:
     
     # Empty ground truth case
     if len(ground_truth_set) == 0:
-        return 0.95 if len(submitted_set) == 0 else 0.05
+        return 0.99 if len(submitted_set) == 0 else 0.01
     
     # Calculate set overlap
     intersection = ground_truth_set & submitted_set
@@ -31,14 +31,14 @@ def _grade_answer(ground_truth_ids: list, submitted_ids: list) -> float:
     # Penalize false positives
     false_positives = len(submitted_set - ground_truth_set)
     if false_positives > 0:
-        score = max(0.05, score - false_positives * 0.1)
+        score = max(0.01, score - false_positives * 0.1)
     
     # Clamp strictly between 0 and 1
-    clamped = max(0.05, min(0.95, score))
+    clamped = max(0.01, min(0.99, score))
     
     # Final validation: ensure strictly between 0 and 1
     if not (0.0 < clamped < 1.0):
-        clamped = 0.05
+        clamped = 0.01
     
     return float(clamped)
 
@@ -60,10 +60,10 @@ def grade_task_task_easy_001(submitted_answer: Dict[str, Any]) -> float:
         # Ensure float and strictly between 0 and 1
         score = float(score)
         if not (0.0 < score < 1.0):
-            return 0.05
+            return 0.01
         return score
     except Exception:
-        return 0.05
+        return 0.01
 
 
 def grade_task_task_medium_001(submitted_answer: Dict[str, Any]) -> float:
@@ -74,10 +74,10 @@ def grade_task_task_medium_001(submitted_answer: Dict[str, Any]) -> float:
         # Ensure float and strictly between 0 and 1
         score = float(score)
         if not (0.0 < score < 1.0):
-            return 0.05
+            return 0.01
         return score
     except Exception:
-        return 0.05
+        return 0.01
 
 
 def grade_task_task_hard_001(submitted_answer: Dict[str, Any]) -> float:
@@ -88,10 +88,10 @@ def grade_task_task_hard_001(submitted_answer: Dict[str, Any]) -> float:
         # Ensure float and strictly between 0 and 1
         score = float(score)
         if not (0.0 < score < 1.0):
-            return 0.05
+            return 0.01
         return score
     except Exception:
-        return 0.05
+        return 0.01
 
 
 def grade_task_task_extreme_001(submitted_answer: Dict[str, Any]) -> float:
@@ -102,10 +102,10 @@ def grade_task_task_extreme_001(submitted_answer: Dict[str, Any]) -> float:
         # Ensure float and strictly between 0 and 1
         score = float(score)
         if not (0.0 < score < 1.0):
-            return 0.05
+            return 0.01
         return score
     except Exception:
-        return 0.05
+        return 0.01
 
 
 # GRADERS registry - completely standalone

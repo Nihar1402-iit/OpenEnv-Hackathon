@@ -11,16 +11,16 @@ from .tasks import get_tasks, get_task_by_id
 def _validate_score(score: float, task_id: str) -> float:
     """
     Validate that a score is strictly between 0 and 1.
-    Returns score clamped to [0.05, 0.95] if needed.
+    Returns score clamped to [0.01, 0.99] if needed.
     """
     try:
         score = float(score)
     except (TypeError, ValueError):
-        return 0.05
+        return 0.01
     
     # Ensure strictly between 0 and 1
     if not (0.0 < score < 1.0):
-        clamped = max(0.05, min(0.95, score))
+        clamped = max(0.01, min(0.99, score))
         return clamped
     
     return score
@@ -33,7 +33,7 @@ def grade_task_task_easy_001(submitted_answer: Dict[str, Any]) -> float:
         score = TaskGrader.grade_task(task, submitted_answer)
         return _validate_score(score, "task_easy_001")
     except Exception:
-        return 0.05
+        return 0.01
 
 
 def grade_task_task_medium_001(submitted_answer: Dict[str, Any]) -> float:
@@ -43,7 +43,7 @@ def grade_task_task_medium_001(submitted_answer: Dict[str, Any]) -> float:
         score = TaskGrader.grade_task(task, submitted_answer)
         return _validate_score(score, "task_medium_001")
     except Exception:
-        return 0.05
+        return 0.01
 
 
 def grade_task_task_hard_001(submitted_answer: Dict[str, Any]) -> float:
@@ -53,7 +53,7 @@ def grade_task_task_hard_001(submitted_answer: Dict[str, Any]) -> float:
         score = TaskGrader.grade_task(task, submitted_answer)
         return _validate_score(score, "task_hard_001")
     except Exception:
-        return 0.05
+        return 0.01
 
 
 def grade_task_task_extreme_001(submitted_answer: Dict[str, Any]) -> float:
@@ -63,7 +63,7 @@ def grade_task_task_extreme_001(submitted_answer: Dict[str, Any]) -> float:
         score = TaskGrader.grade_task(task, submitted_answer)
         return _validate_score(score, "task_extreme_001")
     except Exception:
-        return 0.05
+        return 0.01
 
 
 # Grader registry for OpenEnv validation
@@ -90,11 +90,11 @@ class SafeGraderWrapper:
             if 0.0 < score < 1.0:
                 return score
             else:
-                # Clamp to valid range
-                return max(0.05, min(0.95, score))
+                # Clamp to valid range (0.01, 0.99)
+                return max(0.01, min(0.99, score))
         except Exception:
             # Ultimate fallback
-            return 0.05
+            return 0.01
 
 
 # Wrap all graders with safety wrapper
