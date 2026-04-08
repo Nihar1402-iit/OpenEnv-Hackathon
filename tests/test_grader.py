@@ -84,8 +84,10 @@ class TestTaskGrader:
 
         score = TaskGrader.grade_task(task, answer)
 
-        # 2 correct, 2 false positives = 1.0 - (2 * 0.1) = 0.8
-        assert score == 0.8
+        # With clamping BEFORE penalties:
+        # Raw: 2/2 = 1.0 → clamped to 0.95
+        # Then: 0.95 - (2 false positives * 0.1) = 0.75
+        assert score == 0.75
 
     def test_score_clamped(self) -> None:
         """Test score is properly clamped."""

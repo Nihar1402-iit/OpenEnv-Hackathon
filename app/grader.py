@@ -39,26 +39,30 @@ class TaskGrader:
             return 0.95 if len(predicted_set) == 0 else 0.05
 
         intersection = ground_truth_set & predicted_set
-        score = len(intersection) / len(ground_truth_set)
+        # Raw score: fraction of correct answers found
+        raw_score = len(intersection) / len(ground_truth_set)
 
-        # Penalize false positives
+        # CRITICAL: Clamp BEFORE penalties to ensure max is 0.95, not 1.0
+        # This prevents perfect matches from returning exactly 1.0
+        clamped_score = max(0.05, min(0.95, raw_score))
+        
+        # Penalize false positives (extra items returned that shouldn't be)
         false_positives = len(predicted_set - ground_truth_set)
         if false_positives > 0:
-            score = max(0.05, score - false_positives * 0.1)
-
-        # Clamp to (0.0, 1.0) - strictly between
-        # Map to range [0.05, 0.95] to ensure strictly between 0 and 1
-        clamped = max(0.05, min(0.95, score))
+            clamped_score = max(0.05, clamped_score - false_positives * 0.1)
         
-        # Final validation: ensure strictly between 0 and 1 (defensive programming)
-        if not (0.0 < clamped < 1.0):
-            clamped = 0.05  # Fallback to minimum valid score
+        # Defensive check: if somehow clamping didn't work, use safe default
+        if not (0.0 < clamped_score < 1.0):
+            clamped_score = 0.05
         
-        # Ensure it's a Python float, not numpy or other type
-        final_score = float(clamped)
+        # Ensure it's a Python float (not numpy or other numeric type)
+        final_score = float(clamped_score)
         
-        # Triple-check the range
-        assert 0.0 < final_score < 1.0, f"Score {final_score} is not strictly between 0 and 1"
+        # Final assertion: guarantee the invariant
+        assert 0.0 < final_score < 1.0, (
+            f"CRITICAL: Score {final_score} violates (0, 1) constraint. "
+            f"raw_score={raw_score}, false_positives={false_positives}"
+        )
         
         return final_score
 
