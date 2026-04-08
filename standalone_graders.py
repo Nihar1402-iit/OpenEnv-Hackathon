@@ -35,7 +35,12 @@ def _grade_answer(ground_truth_ids: list, submitted_ids: list) -> float:
     
     # Clamp strictly between 0 and 1
     clamped = max(0.05, min(0.95, score))
-    return clamped
+    
+    # Final validation: ensure strictly between 0 and 1
+    if not (0.0 < clamped < 1.0):
+        clamped = 0.05
+    
+    return float(clamped)
 
 
 # Task ground truths
@@ -49,26 +54,58 @@ TASK_GROUND_TRUTHS = {
 
 def grade_task_task_easy_001(submitted_answer: Dict[str, Any]) -> float:
     """Grade task_easy_001 - STANDALONE"""
-    submitted_ids = submitted_answer.get("customer_ids", [])
-    return _grade_answer(TASK_GROUND_TRUTHS["task_easy_001"], submitted_ids)
+    try:
+        submitted_ids = submitted_answer.get("customer_ids", [])
+        score = _grade_answer(TASK_GROUND_TRUTHS["task_easy_001"], submitted_ids)
+        # Ensure float and strictly between 0 and 1
+        score = float(score)
+        if not (0.0 < score < 1.0):
+            return 0.05
+        return score
+    except Exception:
+        return 0.05
 
 
 def grade_task_task_medium_001(submitted_answer: Dict[str, Any]) -> float:
     """Grade task_medium_001 - STANDALONE"""
-    submitted_ids = submitted_answer.get("customer_ids", [])
-    return _grade_answer(TASK_GROUND_TRUTHS["task_medium_001"], submitted_ids)
+    try:
+        submitted_ids = submitted_answer.get("customer_ids", [])
+        score = _grade_answer(TASK_GROUND_TRUTHS["task_medium_001"], submitted_ids)
+        # Ensure float and strictly between 0 and 1
+        score = float(score)
+        if not (0.0 < score < 1.0):
+            return 0.05
+        return score
+    except Exception:
+        return 0.05
 
 
 def grade_task_task_hard_001(submitted_answer: Dict[str, Any]) -> float:
     """Grade task_hard_001 - STANDALONE"""
-    submitted_ids = submitted_answer.get("customer_ids", [])
-    return _grade_answer(TASK_GROUND_TRUTHS["task_hard_001"], submitted_ids)
+    try:
+        submitted_ids = submitted_answer.get("customer_ids", [])
+        score = _grade_answer(TASK_GROUND_TRUTHS["task_hard_001"], submitted_ids)
+        # Ensure float and strictly between 0 and 1
+        score = float(score)
+        if not (0.0 < score < 1.0):
+            return 0.05
+        return score
+    except Exception:
+        return 0.05
 
 
 def grade_task_task_extreme_001(submitted_answer: Dict[str, Any]) -> float:
     """Grade task_extreme_001 - STANDALONE"""
-    submitted_ids = submitted_answer.get("customer_ids", [])
-    return _grade_answer(TASK_GROUND_TRUTHS["task_extreme_001"], submitted_ids)
+    try:
+        submitted_ids = submitted_answer.get("customer_ids", [])
+        score = _grade_answer(TASK_GROUND_TRUTHS["task_extreme_001"], submitted_ids)
+        # Ensure float and strictly between 0 and 1
+        score = float(score)
+        if not (0.0 < score < 1.0):
+            return 0.05
+        return score
+    except Exception:
+        return 0.05
 
 
 # GRADERS registry - completely standalone

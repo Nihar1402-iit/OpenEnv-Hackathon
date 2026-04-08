@@ -49,7 +49,12 @@ class TaskGrader:
         # Clamp to (0.0, 1.0) - strictly between
         # Map to range [0.05, 0.95] to ensure strictly between 0 and 1
         clamped = max(0.05, min(0.95, score))
-        return clamped
+        
+        # Final validation: ensure strictly between 0 and 1
+        if not (0.0 < clamped < 1.0):
+            clamped = 0.05  # Fallback to minimum valid score
+        
+        return float(clamped)
 
     @staticmethod
     def grade_multiple_tasks(
@@ -79,21 +84,6 @@ class TaskGrader:
     @staticmethod
     def compute_average_score(scores: Dict[str, float]) -> float:
         """
-        Compute average score across tasks.
-        
-        Args:
-            scores: Dict mapping task_id to score
-        
-        Returns:
-            Average score
-        """
-        if not scores:
-            return 0.0
-        return sum(scores.values()) / len(scores)
-
-    @staticmethod
-    def compute_average_score(scores: Dict[str, float]) -> float:
-        """
         Compute average score across all tasks.
         
         Args:
@@ -104,5 +94,4 @@ class TaskGrader:
         """
         if not scores:
             return 0.0
-
         return sum(scores.values()) / len(scores)
