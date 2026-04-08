@@ -17,6 +17,8 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir --default-timeout 100 -r requirements.txt
 
 # Copy app code
+COPY __init__.py .
+COPY standalone_graders.py .
 COPY app/ ./app/
 COPY openenv.yaml .
 COPY app.py .
