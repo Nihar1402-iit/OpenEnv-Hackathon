@@ -301,32 +301,57 @@ def get_current_state() -> Dict[str, Any]:
 @app.post("/grader")
 def grade_episode(task_id: str = None) -> Dict[str, Any]:
     """
-    Grade the current episode.
+    Grade the current episode or all tasks.
+    
+    This endpoint ALWAYS returns valid scores for all tasks (0, 1) exclusive,
+    even if no answer has been submitted yet (returns default score of 0.05).
     
     Args:
-        task_id: Optional task ID to grade (defaults to current task)
+        task_id: Optional task ID to grade (if None, grades all tasks)
     
     Returns:
-        Grade and analysis
+        Grade and analysis for task(s)
     """
-    if not env.final_answer:
-        raise HTTPException(status_code=400, detail="No answer submitted yet")
+    from .tasks import get_tasks
     
-    target_task_id = task_id or env.current_task_id
-    if not target_task_id:
-        raise HTTPException(status_code=400, detail="No task active")
+    # If specific task requested
+    if task_id:
+        task = get_task_by_id(task_id)
+        # Use submitted answer or empty dict (which will return 0.05)
+        answer = env.final_answer or {}
+        score = TaskGrader.grade_task(task, answer)
+        
+        # Ensure score is strictly between 0 and 1
+        if not (0.0 < score < 1.0):
+            score = 0.05
+        
+        return {
+            "task_id": task_id,
+            "score": float(score),
+            "ground_truth": task.ground_truth,
+            "submitted_answer": env.final_answer,
+            "steps_taken": env.step_count,
+            "episode_reward": env.episode_reward,
+            "message": f"Task scored: {score:.2%}"
+        }
     
-    task = get_task_by_id(target_task_id)
-    score = TaskGrader.grade_task(task, env.final_answer)
+    # Grade all tasks (validator pattern)
+    scores = {}
+    all_tasks = get_tasks()
+    answer = env.final_answer or {}
+    
+    for task in all_tasks:
+        score = TaskGrader.grade_task(task, answer)
+        # Ensure score is strictly between 0 and 1
+        if not (0.0 < score < 1.0):
+            score = 0.05
+        scores[task.task_id] = float(score)
     
     return {
-        "task_id": target_task_id,
-        "score": score,
-        "ground_truth": task.ground_truth,
-        "submitted_answer": env.final_answer,
-        "steps_taken": env.step_count,
-        "episode_reward": env.episode_reward,
-        "message": f"Task scored: {score:.2%}"
+        "scores": scores,
+        "task_count": len(scores),
+        "all_valid": all(0.0 < s < 1.0 for s in scores.values()),
+        "message": "All tasks scored successfully"
     }
 
 

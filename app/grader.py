@@ -50,11 +50,17 @@ class TaskGrader:
         # Map to range [0.05, 0.95] to ensure strictly between 0 and 1
         clamped = max(0.05, min(0.95, score))
         
-        # Final validation: ensure strictly between 0 and 1
+        # Final validation: ensure strictly between 0 and 1 (defensive programming)
         if not (0.0 < clamped < 1.0):
             clamped = 0.05  # Fallback to minimum valid score
         
-        return float(clamped)
+        # Ensure it's a Python float, not numpy or other type
+        final_score = float(clamped)
+        
+        # Triple-check the range
+        assert 0.0 < final_score < 1.0, f"Score {final_score} is not strictly between 0 and 1"
+        
+        return final_score
 
     @staticmethod
     def grade_multiple_tasks(
