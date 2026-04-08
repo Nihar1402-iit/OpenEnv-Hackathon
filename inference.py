@@ -319,7 +319,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
             final_answer = {"customer_ids": []}
 
     # 🔥 FIX 3: FORCE FINAL SUBMISSION VIA ENV IF NOT ALREADY SUBMITTED
-    if not final_answer:
+    if not final_answer and not done:
         if verbose:
             print(f"\n⚠️  No submission detected, forcing final submission through env...")
         
@@ -335,6 +335,10 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
             if verbose:
                 print(f"Fallback submission failed: {str(e)}")
             final_answer = {"customer_ids": []}
+    
+    # 🔥 FIX 4: GUARANTEE final_answer even if all submissions failed
+    if not final_answer:
+        final_answer = {"customer_ids": []}
 
     score = TaskGrader.grade_task(task, final_answer)
 
