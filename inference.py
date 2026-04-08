@@ -177,15 +177,34 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
         step_start = time.time()
 
         try:
-            # 🔥 SKIP API CALL - Use random score for testing
-            # For validation testing, we skip the OpenAI API call entirely
-            # and go straight to submit_answer
-            action = {
-                "tool": "submit_answer",
-                "arguments": {"customer_ids": []}
-            }
-            
-            # Skip verbose output for this step since we're not calling API
+            # Call OpenAI API
+            response = openai_client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=0.1,
+                max_tokens=500
+            )
+
+            assistant_message = response.choices[0].message.content
+            messages.append({
+                "role": "assistant",
+                "content": assistant_message
+            })
+
+            # Parse action from response
+            try:
+                action = json.loads(assistant_message)
+            except json.JSONDecodeError:
+                # Try to extract JSON from response if it's wrapped in text
+                import re
+                json_match = re.search(r'\{.*\}', assistant_message, re.DOTALL)
+                if json_match:
+                    action = json.loads(json_match.group())
+                else:
+                    if verbose:
+                        print(f"Step {step}: Failed to parse action from response")
+                    continue
+
             if verbose:
                 print(f"\nStep {step}:")
                 print(f"  Tool: {action.get('tool')}")
@@ -349,9 +368,8 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
     if not final_answer:
         final_answer = {"customer_ids": []}
 
-    # 🔥 TESTING: Use random score instead of actual grading
-    # score = TaskGrader.grade_task(task, final_answer)
-    score = random.uniform(0.01, 0.99)  # Random score between 0.01 and 0.99 (0 and 1 excluded)
+    # Grade the task using the actual grader
+    score = TaskGrader.grade_task(task, final_answer)
 
     if verbose:
         print(f"\nTask Score: {score:.2%}")
