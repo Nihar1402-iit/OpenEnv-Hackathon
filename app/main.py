@@ -2,15 +2,22 @@
 FastAPI server for CRM Query Environment.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel
 from .env import CRMQueryEnv
 from .models import Task, Observation, Reward
 from .tasks import get_tasks, get_task_by_id
 from .grader import TaskGrader
 import json
+
+
+class GraderRequest(BaseModel):
+    """Request model for /grader endpoint."""
+    task_id: Optional[str] = None
+    submitted_answer: Optional[Dict[str, Any]] = None
 
 
 # Global environment instance
@@ -299,31 +306,60 @@ def get_current_state() -> Dict[str, Any]:
 
 
 @app.post("/grader")
-def grade_episode() -> Dict[str, Any]:
+def grade_episode(request: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     """
-    Grade ALL tasks. Always returns scores for every task, even on cold start.
+    Grade task submission. Accepts JSON body:
+    {"task_id": "...", "submitted_answer": {...}}
     
-    The validator calls this endpoint without running an episode first.
-    Never raise an error — always return scores for all 4 tasks.
+    The validator calls this endpoint with JSON body.
+    Always returns a score strictly in (0, 1) range.
+    
+    Args:
+        request: Dict with task_id and submitted_answer
     
     Returns:
-        {"scores": {"task_id_1": score, "task_id_2": score, ...}}
+        {"score": <float in (0, 1)>} for single task
+        or {"scores": {...}} for all tasks
     """
     from .tasks import get_tasks
     
-    all_tasks = get_tasks()
-    scores = {}
+    task_id = request.get("task_id")
+    submitted_answer = request.get("submitted_answer")
     
-    # Use submitted answer if available, otherwise empty dict (scores 0.01)
-    answer = env.final_answer if env.final_answer else {}
+    # If no task_id, grade all tasks (validator use case)
+    if not task_id:
+        all_tasks = get_tasks()
+        scores = {}
+        
+        # Use submitted answer if available, otherwise empty dict (scores 0.01)
+        answer = submitted_answer if isinstance(submitted_answer, dict) else env.final_answer if env.final_answer else {}
+        
+        for task in all_tasks:
+            score = TaskGrader.grade_task(task, answer)
+            # Belt-and-suspenders: enforce strictly (0, 1)
+            score = max(0.01, min(0.99, float(score)))
+            scores[task.task_id] = score
+        
+        return {"scores": scores}
     
-    for task in all_tasks:
-        score = TaskGrader.grade_task(task, answer)
-        # Belt-and-suspenders: enforce strictly (0, 1)
-        score = max(0.01, min(0.99, float(score)))
-        scores[task.task_id] = score
+    # Grade single task
+    task = get_task_by_id(task_id)
+    if task is None:
+        return {"error": f"Task {task_id} not found", "score": 0.01}
     
-    return {"scores": scores}
+    # Normalize submitted_answer
+    if not isinstance(submitted_answer, dict):
+        submitted_answer = {}
+    
+    # Grade the task
+    score = TaskGrader.grade_task(task, submitted_answer)
+    
+    # Triple-check: enforce strictly (0, 1)
+    score = max(0.01, min(0.99, float(score)))
+    
+    assert 0.0 < score < 1.0, f"Score {score} violates (0, 1) boundary"
+    
+    return {"score": score}
 
 
 @app.post("/plan")

@@ -169,8 +169,15 @@ class CRMQueryEnv:
             self.retrieved_entities["tickets"].extend(data)
             was_memory_hit = self._check_cache_hit(tool, arguments)
         elif tool == "submit_answer":
+            # Normalize customer_ids for submit_answer
+            customer_ids = arguments.get("customer_ids", []) if isinstance(arguments, dict) else []
+            if not isinstance(customer_ids, list):
+                customer_ids = []
+            # Ensure all elements are strings, filter None
+            customer_ids = [str(x) for x in customer_ids if x is not None]
+            
+            self.final_answer = {"customer_ids": customer_ids}
             action_result = {"data": [], "message": "Answer submitted"}
-            self.final_answer = arguments
             self.done = True
         else:
             action_result = {"data": [], "message": "Invalid tool", "error": True}
@@ -232,6 +239,10 @@ class CRMQueryEnv:
         Returns:
             Dict with 'data' key containing matching customers
         """
+        # Ensure filters is a dict
+        if not isinstance(filters, dict):
+            filters = {}
+        
         customers = self.database["customers"]
         results = []
 
@@ -256,6 +267,10 @@ class CRMQueryEnv:
         Returns:
             Dict with 'data' key containing matching orders
         """
+        # Ensure filters is a dict
+        if not isinstance(filters, dict):
+            filters = {}
+        
         orders = self.database["orders"]
         results = []
 
@@ -280,6 +295,10 @@ class CRMQueryEnv:
         Returns:
             Dict with 'data' key containing matching tickets
         """
+        # Ensure filters is a dict
+        if not isinstance(filters, dict):
+            filters = {}
+        
         tickets = self.database["support_tickets"]
         results = []
 

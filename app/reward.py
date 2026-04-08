@@ -129,12 +129,24 @@ class RewardCalculator:
         # Submit answer reward
         if tool == "submit_answer":
             # Handle both dict and Pydantic model
+            submitted = []
             if isinstance(action, dict):
-                submitted = action.get("arguments", {}).get("customer_ids", [])
+                args = action.get("arguments", {})
+                if isinstance(args, dict):
+                    submitted = args.get("customer_ids", [])
             else:
-                submitted = action.arguments.get("customer_ids", [])
+                try:
+                    args = getattr(action, "arguments", {})
+                    if isinstance(args, dict):
+                        submitted = args.get("customer_ids", [])
+                except (AttributeError, TypeError):
+                    submitted = []
             
-            ground_truth = task_ground_truth.get("customer_ids", [])
+            # Ensure submitted is a list
+            if not isinstance(submitted, list):
+                submitted = []
+            
+            ground_truth = task_ground_truth.get("customer_ids", []) if task_ground_truth else []
 
             if isinstance(submitted, list) and isinstance(ground_truth, list):
                 submitted_set = set(submitted)
