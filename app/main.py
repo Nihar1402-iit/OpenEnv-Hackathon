@@ -299,60 +299,31 @@ def get_current_state() -> Dict[str, Any]:
 
 
 @app.post("/grader")
-def grade_episode(task_id: str = None) -> Dict[str, Any]:
+def grade_episode() -> Dict[str, Any]:
     """
-    Grade the current episode or all tasks.
+    Grade ALL tasks. Always returns scores for every task, even on cold start.
     
-    This endpoint ALWAYS returns valid scores for all tasks (0, 1) exclusive,
-    even if no answer has been submitted yet (returns default score of 0.01).
-    
-    Args:
-        task_id: Optional task ID to grade (if None, grades all tasks)
+    The validator calls this endpoint without running an episode first.
+    Never raise an error — always return scores for all 4 tasks.
     
     Returns:
-        Grade and analysis for task(s)
+        {"scores": {"task_id_1": score, "task_id_2": score, ...}}
     """
     from .tasks import get_tasks
     
-    # If specific task requested
-    if task_id:
-        task = get_task_by_id(task_id)
-        # Use submitted answer or empty dict (which will return 0.01)
-        answer = env.final_answer or {}
-        score = TaskGrader.grade_task(task, answer)
-        
-        # Ensure score is strictly between 0 and 1
-        if not (0.0 < score < 1.0):
-            score = 0.01
-        
-        return {
-            "task_id": task_id,
-            "score": float(score),
-            "ground_truth": task.ground_truth,
-            "submitted_answer": env.final_answer,
-            "steps_taken": env.step_count,
-            "episode_reward": env.episode_reward,
-            "message": f"Task scored: {score:.2%}"
-        }
-    
-    # Grade all tasks (validator pattern)
-    scores = {}
     all_tasks = get_tasks()
-    answer = env.final_answer or {}
+    scores = {}
+    
+    # Use submitted answer if available, otherwise empty dict (scores 0.01)
+    answer = env.final_answer if env.final_answer else {}
     
     for task in all_tasks:
         score = TaskGrader.grade_task(task, answer)
-        # Ensure score is strictly between 0 and 1
-        if not (0.0 < score < 1.0):
-            score = 0.01
-        scores[task.task_id] = float(score)
+        # Belt-and-suspenders: enforce strictly (0, 1)
+        score = max(0.01, min(0.99, float(score)))
+        scores[task.task_id] = score
     
-    return {
-        "scores": scores,
-        "task_count": len(scores),
-        "all_valid": all(0.0 < s < 1.0 for s in scores.values()),
-        "message": "All tasks scored successfully"
-    }
+    return {"scores": scores}
 
 
 @app.post("/plan")
