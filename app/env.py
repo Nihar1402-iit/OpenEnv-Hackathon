@@ -118,14 +118,35 @@ class CRMQueryEnv:
         self.step_count += 1
         task = get_task_by_id(self.current_task_id)
 
-        # Validate action - handle both dict and Pydantic models
-        if isinstance(action, dict):
+        # 🔥 DEFENSIVE: Handle None, strings, ints, or any invalid type
+        if action is None:
+            tool = ""
+            arguments = {}
+        elif isinstance(action, dict):
             tool = action.get("tool", "")
             arguments = action.get("arguments", {})
+        elif isinstance(action, str):
+            # Invalid: string passed as action
+            tool = ""
+            arguments = {}
+        elif isinstance(action, (int, float, list, tuple)):
+            # Invalid: numeric or sequence type
+            tool = ""
+            arguments = {}
         else:
-            # Pydantic model
-            tool = action.tool
-            arguments = action.arguments
+            # Try to treat as Pydantic model
+            try:
+                tool = getattr(action, "tool", "")
+                arguments = getattr(action, "arguments", {})
+            except (AttributeError, TypeError):
+                tool = ""
+                arguments = {}
+        
+        # Ensure tool and arguments are valid types
+        if not isinstance(tool, str):
+            tool = ""
+        if not isinstance(arguments, dict):
+            arguments = {}
 
         # Execute action
         action_result: Dict[str, Any] = {}

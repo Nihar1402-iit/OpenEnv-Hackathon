@@ -49,14 +49,33 @@ class RewardCalculator:
         components: Dict[str, float] = {}
         base_reward = 0.0
 
-        # Handle both dict and Pydantic model
-        if isinstance(action, dict):
+        # 🔥 DEFENSIVE: Handle None, strings, ints, or any invalid type
+        if action is None:
+            tool = ""
+            arguments = {}
+        elif isinstance(action, dict):
             tool = action.get("tool", "")
             arguments = action.get("arguments", {})
+        elif isinstance(action, str):
+            tool = ""
+            arguments = {}
+        elif isinstance(action, (int, float, list, tuple)):
+            tool = ""
+            arguments = {}
         else:
-            # Pydantic model
-            tool = action.tool
-            arguments = action.arguments
+            # Try Pydantic model
+            try:
+                tool = getattr(action, "tool", "")
+                arguments = getattr(action, "arguments", {})
+            except (AttributeError, TypeError):
+                tool = ""
+                arguments = {}
+        
+        # Ensure types are correct
+        if not isinstance(tool, str):
+            tool = ""
+        if not isinstance(arguments, dict):
+            arguments = {}
 
         # Schema validation reward
         if tool in ["search_customers", "search_orders", "search_tickets", "submit_answer"]:
