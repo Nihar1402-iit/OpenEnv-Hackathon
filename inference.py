@@ -174,6 +174,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
     done = False
     final_answer = None
     step_times = []
+    task_rewards = []  # 🔥 Track rewards for each step
 
     while step < max_steps and not done:
         step += 1
@@ -219,6 +220,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
             # Clamp reward to valid range
             reward_value = float(reward.value)
             reward_value = max(0.0, min(1.0, reward_value))
+            task_rewards.append(reward_value)  # 🔥 Track rewards
 
             # Log structured STEP marker
             _log_step(
@@ -244,7 +246,21 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
 
             # Check if final answer was submitted
             if action.get("tool") == "submit_answer":
-                final_answer = action.get("arguments", {})
+                args = action.get("arguments", {})
+
+                # 🔥 HARD VALIDATION - Ensure format is correct
+                if not isinstance(args, dict):
+                    args = {}
+
+                customer_ids = args.get("customer_ids", [])
+
+                if not isinstance(customer_ids, list):
+                    customer_ids = []
+
+                # Ensure all are strings
+                customer_ids = [str(x) for x in customer_ids]
+
+                final_answer = {"customer_ids": customer_ids}
                 done = True
 
         except Exception as e:
@@ -256,25 +272,22 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
                 step_idx=step,
                 tool="error",
                 arguments={"error": str(e)},
-                reward=0.0,
+                reward=0.01,
                 done=False,
                 error=str(e)
             )
-            # Continue to next step even on error
-            break
+            # Continue to next step even on error (🔥 NOT break)
+            continue
         
         finally:
             step_time = time.time() - step_start
             step_times.append(step_time)
 
-    # Grade task using deterministic grader
-    if final_answer:
-        score = TaskGrader.grade_task(task, final_answer)
-    else:
-        score = 0.01  # Minimum non-zero score for cases with no answer
+    # 🔥 GUARANTEE EVERY TASK HAS A VALID SUBMISSION
+    if not final_answer:
+        final_answer = {"customer_ids": []}
 
-    # Ensure score is in (0.001, 0.999) range
-    score = max(0.001, min(0.999, score))
+    score = TaskGrader.grade_task(task, final_answer)
 
     if verbose:
         print(f"\nTask Score: {score:.2%}")
@@ -290,7 +303,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
         "final_answer": final_answer,
         "ground_truth": task.ground_truth,
         "step_times": step_times,
-        "rewards": [float(reward.value) for reward in []]  # Will be populated during steps
+        "task_rewards": task_rewards  # 🔥 Return actual tracked rewards
     }
 
 
@@ -335,6 +348,7 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
     # Get all tasks
     tasks = get_tasks()
     run_id = str(int(time.time()))
+    print(f"Total tasks loaded: {len(tasks)}")  # 🔥 Debug output
     _log_start(run_id, config["api_base"], config["model_name"], [t.task_id for t in tasks])
     results = {}
     scores = {}
@@ -357,7 +371,7 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
             
             # Log task end with proper structure
             task_success = task_result["score"] >= 0.50
-            task_rewards = task_result.get("step_times", [])
+            task_rewards = task_result.get("task_rewards", [])  # 🔥 Use actual tracked rewards
             _log_task_end(
                 task_id=task_id,
                 success=task_success,
