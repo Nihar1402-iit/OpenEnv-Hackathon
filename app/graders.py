@@ -3,7 +3,7 @@ Grader functions for OpenEnv compliance.
 This module exports grader functions that can be used by validators.
 """
 
-from typing import Dict, Any
+from typing import Callable, Dict, Any
 from .grader import TaskGrader
 from .tasks import get_tasks, get_task_by_id
 
@@ -48,6 +48,6 @@ def get_grader(task_id: str):
     return GRADERS[task_id]
 
 
-def get_all_graders() -> Dict[str, callable]:
+def get_all_graders() -> Dict[str, Callable[[Dict[str, Any]], float]]:
     """Get all graders."""
     return GRADERS.copy()

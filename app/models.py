@@ -2,7 +2,7 @@
 Pydantic models for OpenEnv compliance.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -125,6 +125,6 @@ class Task(BaseModel):
     ground_truth: Dict[str, Any]
     max_steps: int
     action_schema: Dict[str, Any]
-    grader: Optional[callable] = Field(default=None, exclude=True, description="Grader function for this task")
+    grader: Optional[Callable[[Dict[str, Any]], float]] = Field(default=None, exclude=True, description="Grader function for this task")
     
     model_config = {"arbitrary_types_allowed": True}
