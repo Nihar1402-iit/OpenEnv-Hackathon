@@ -306,7 +306,7 @@ def get_current_state() -> Dict[str, Any]:
 
 
 @app.post("/grader")
-def grade_episode(request: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+def grade_episode(request: Dict[str, Any] = Body({})) -> Dict[str, Any]:
     """
     Grade task submission. Accepts JSON body:
     {"task_id": "...", "submitted_answer": {...}}
@@ -322,7 +322,11 @@ def grade_episode(request: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
         or {"scores": {...}} for all tasks
     """
     from .tasks import get_tasks
-    
+
+    # Defensive: accept missing/empty body
+    if request is None or not isinstance(request, dict):
+        request = {}
+
     task_id = request.get("task_id")
     submitted_answer = request.get("submitted_answer")
     
