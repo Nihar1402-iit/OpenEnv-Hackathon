@@ -12,29 +12,37 @@ tags:
   - multi-step-reasoning
 
 tasks:
-  - id: task_easy_001
+  - task_id: task_easy_001
     description: "Find the customer with ID C005 and return their customer_id."
     difficulty: easy
     max_attempts: 5
     scoring: "0.0-1.0 partial credit"
+    grader: task_easy_001
+    ground_truth: {"customer_ids": [1]}
 
-  - id: task_medium_001
+  - task_id: task_medium_001
     description: "Find all customers who are either Gold tier OR have purchased a Laptop. Return their customer_ids."
     difficulty: medium
     max_attempts: 10
     scoring: "0.0-1.0 partial credit"
+    grader: task_medium_001
+    ground_truth: {"customer_ids": [1, 2, 3]}
 
-  - id: task_hard_001
+  - task_id: task_hard_001
     description: "Find all Gold-tier customers who have at least one HIGH priority OPEN support ticket. Return their customer_ids."
     difficulty: hard
     max_attempts: 15
     scoring: "0.0-1.0 partial credit"
+    grader: task_hard_001
+    ground_truth: {"customer_ids": [1, 2]}
 
-  - id: task_extreme_001
+  - task_id: task_extreme_001
     description: "Find all customers from Gold-tier queries with HIGH priority OPEN tickets using memory reuse."
     difficulty: extreme
     max_attempts: 20
     scoring: "0.0-1.0 partial credit"
+    grader: task_extreme_001
+    ground_truth: {"customer_ids": [1, 2, 3]}
 
 observation_space:
   task_id: "string"
