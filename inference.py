@@ -214,6 +214,23 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
                 print(f"  Tool: {action.get('tool')}")
                 print(f"  Arguments: {action.get('arguments')}")
 
+            # 🔥 FIX 1: SANITIZE ACTION BEFORE EXECUTION
+            if not isinstance(action, dict):
+                action = {"tool": "submit_answer", "arguments": {"customer_ids": []}}
+
+            if "tool" not in action:
+                action["tool"] = "submit_answer"
+
+            if "arguments" not in action or not isinstance(action["arguments"], dict):
+                action["arguments"] = {}
+
+            # Ensure submit_answer always valid
+            if action["tool"] == "submit_answer":
+                ids = action["arguments"].get("customer_ids", [])
+                if not isinstance(ids, list):
+                    ids = []
+                action["arguments"]["customer_ids"] = [str(x) for x in ids]
+
             # Execute action in environment
             obs, reward, done, info = env.step(action)
 
@@ -283,9 +300,41 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
             step_time = time.time() - step_start
             step_times.append(step_time)
 
-    # 🔥 GUARANTEE EVERY TASK HAS A VALID SUBMISSION
+    # 🔥 FIX 2: FORCE FINAL SUBMISSION AT MAX STEPS
+    if step == max_steps and not done:
+        if verbose:
+            print(f"\n⚠️  Max steps reached, forcing final submission...")
+        
+        fallback_action = {
+            "tool": "submit_answer",
+            "arguments": {"customer_ids": []}
+        }
+        
+        try:
+            obs, reward, done, info = env.step(fallback_action)
+            final_answer = {"customer_ids": []}
+        except Exception as e:
+            if verbose:
+                print(f"Forced submission failed: {str(e)}")
+            final_answer = {"customer_ids": []}
+
+    # 🔥 FIX 3: FORCE FINAL SUBMISSION VIA ENV IF NOT ALREADY SUBMITTED
     if not final_answer:
-        final_answer = {"customer_ids": []}
+        if verbose:
+            print(f"\n⚠️  No submission detected, forcing final submission through env...")
+        
+        fallback_action = {
+            "tool": "submit_answer",
+            "arguments": {"customer_ids": []}
+        }
+
+        try:
+            obs, reward, done, info = env.step(fallback_action)
+            final_answer = {"customer_ids": []}
+        except Exception as e:
+            if verbose:
+                print(f"Fallback submission failed: {str(e)}")
+            final_answer = {"customer_ids": []}
 
     score = TaskGrader.grade_task(task, final_answer)
 
