@@ -2,7 +2,7 @@
 FastAPI server for CRM Query Environment.
 """
 
-from fastapi import FastAPI, HTTPException, Body, Body
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from typing import Dict, Any, List, Optional
@@ -306,7 +306,7 @@ def get_current_state() -> Dict[str, Any]:
 
 
 @app.post("/grader")
-def grade_episode(request: Dict[str, Any] = Body({})) -> Dict[str, Any]:
+def grade_episode(request: Dict[str, Any] = Body(None)) -> Dict[str, Any]:
     """
     Grade task submission. Accepts JSON body:
     {"task_id": "...", "submitted_answer": {...}}
