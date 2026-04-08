@@ -1,0 +1,131 @@
+name: crm_query_env
+version: 1.0.0
+description: 'CRM Query Environment for training AI agents to perform multi-step enterprise
+  database queries through reasoning.
+
+  '
+author: Nihar Shah
+tags:
+- openenv
+- crm
+- database
+- multi-step-reasoning
+tasks:
+- task_id: task_easy_001
+  description: Find the customer with ID C005 and return their customer_id.
+  difficulty: easy
+  max_attempts: 5
+  scoring: 0.0-1.0 partial credit
+  grader:
+    type: http
+    endpoint: /grader
+    task_id: task_easy_001
+  ground_truth:
+    customer_ids:
+    - C005
+- task_id: task_medium_001
+  description: Find all customers who are either Gold tier OR have purchased a Laptop.
+    Return their customer_ids.
+  difficulty: medium
+  max_attempts: 10
+  scoring: 0.0-1.0 partial credit
+  grader:
+    type: http
+    endpoint: /grader
+    task_id: task_medium_001
+  ground_truth:
+    customer_ids:
+    - C001
+    - C004
+    - C006
+    - C009
+    - C011
+    - C014
+    - C016
+    - C019
+- task_id: task_hard_001
+  description: Find all Gold-tier customers who have at least one HIGH priority OPEN
+    support ticket. Return their customer_ids.
+  difficulty: hard
+  max_attempts: 15
+  scoring: 0.0-1.0 partial credit
+  grader:
+    type: http
+    endpoint: /grader
+    task_id: task_hard_001
+  ground_truth:
+    customer_ids:
+    - C001
+    - C004
+    - C006
+    - C009
+    - C011
+    - C014
+    - C016
+    - C019
+- task_id: task_extreme_001
+  description: Find all customers from Gold-tier queries with HIGH priority OPEN tickets
+    using memory reuse.
+  difficulty: extreme
+  max_attempts: 20
+  scoring: 0.0-1.0 partial credit
+  grader:
+    type: http
+    endpoint: /grader
+    task_id: task_extreme_001
+  ground_truth:
+    customer_ids:
+    - C001
+    - C004
+    - C006
+    - C009
+    - C011
+    - C014
+    - C016
+    - C019
+observation_space:
+  task_id: string
+  task_description: string
+  step_count: int
+  max_steps: int
+  available_tools: list
+  last_action_result: object
+  done: bool
+action_space:
+  tool: string - search_customers | search_orders | search_tickets | submit_answer
+  arguments: object
+reward:
+  type: continuous
+  range:
+  - 0.01
+  - 0.99
+  shaping:
+  - +0.5 valid schema
+  - +0.3 narrowing search
+  - +3.0 answer accuracy
+  - -0.5 repeated query
+  - -2.0 invalid schema
+endpoints:
+- path: /reset
+  method: POST
+  description: Start a new episode
+- path: /step
+  method: POST
+  description: Execute an action
+- path: /state
+  method: GET
+  description: Get current episode state
+- path: /tasks
+  method: GET
+  description: List all tasks
+- path: /grader
+  method: POST
+  description: Grade all tasks, returns scores dict
+- path: /health
+  method: GET
+  description: Health check
+runtime:
+  framework: FastAPI
+  python: '3.11'
+  docker: true
+  hf_spaces: true
