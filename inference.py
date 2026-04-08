@@ -214,22 +214,54 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
                 print(f"  Tool: {action.get('tool')}")
                 print(f"  Arguments: {action.get('arguments')}")
 
-            # 🔥 FIX 1: SANITIZE ACTION BEFORE EXECUTION
+            # 🔥 FIX 1: STRICT ACTION SANITIZATION (handles ALL validator test cases)
+            # This ensures the agent interface is bulletproof regardless of LLM output
+            
+            valid_tools = {
+                "search_customers",
+                "search_orders",
+                "search_tickets",
+                "submit_answer"
+            }
+
+            # Ensure action is dict
             if not isinstance(action, dict):
                 action = {"tool": "submit_answer", "arguments": {"customer_ids": []}}
 
-            if "tool" not in action:
-                action["tool"] = "submit_answer"
+            # Normalize tool name (lowercase, strip whitespace)
+            tool = action.get("tool", "")
+            if not isinstance(tool, str):
+                tool = ""
+            
+            tool = tool.lower().strip()
 
-            if "arguments" not in action or not isinstance(action["arguments"], dict):
-                action["arguments"] = {}
+            # Reject invalid tool names - fallback to submit_answer
+            if tool not in valid_tools:
+                tool = "submit_answer"
 
-            # Ensure submit_answer always valid
-            if action["tool"] == "submit_answer":
-                ids = action["arguments"].get("customer_ids", [])
-                if not isinstance(ids, list):
-                    ids = []
-                action["arguments"]["customer_ids"] = [str(x) for x in ids]
+            # Normalize arguments to dict
+            arguments = action.get("arguments", {})
+            if not isinstance(arguments, dict):
+                arguments = {}
+
+            # Special handling for submit_answer - ensure customer_ids is valid list
+            if tool == "submit_answer":
+                customer_ids = arguments.get("customer_ids", [])
+
+                # Convert to list if not already
+                if not isinstance(customer_ids, list):
+                    customer_ids = []
+
+                # Ensure all elements are strings, filter None values
+                customer_ids = [str(x) for x in customer_ids if x is not None]
+
+                arguments = {"customer_ids": customer_ids}
+
+            # Build final sanitized action
+            action = {
+                "tool": tool,
+                "arguments": arguments
+            }
 
             # Execute action in environment
             obs, reward, done, info = env.step(action)
