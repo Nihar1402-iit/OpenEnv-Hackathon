@@ -304,7 +304,7 @@ def grade_episode(task_id: str = None) -> Dict[str, Any]:
     Grade the current episode or all tasks.
     
     This endpoint ALWAYS returns valid scores for all tasks (0, 1) exclusive,
-    even if no answer has been submitted yet (returns default score of 0.05).
+    even if no answer has been submitted yet (returns default score of 0.01).
     
     Args:
         task_id: Optional task ID to grade (if None, grades all tasks)
@@ -317,13 +317,13 @@ def grade_episode(task_id: str = None) -> Dict[str, Any]:
     # If specific task requested
     if task_id:
         task = get_task_by_id(task_id)
-        # Use submitted answer or empty dict (which will return 0.05)
+        # Use submitted answer or empty dict (which will return 0.01)
         answer = env.final_answer or {}
         score = TaskGrader.grade_task(task, answer)
         
         # Ensure score is strictly between 0 and 1
         if not (0.0 < score < 1.0):
-            score = 0.05
+            score = 0.01
         
         return {
             "task_id": task_id,
@@ -344,7 +344,7 @@ def grade_episode(task_id: str = None) -> Dict[str, Any]:
         score = TaskGrader.grade_task(task, answer)
         # Ensure score is strictly between 0 and 1
         if not (0.0 < score < 1.0):
-            score = 0.05
+            score = 0.01
         scores[task.task_id] = float(score)
     
     return {

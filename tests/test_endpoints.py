@@ -98,7 +98,7 @@ class TestEndpoints:
         # All scores should be valid (strictly between 0 and 1)
         for task_id, score in data["scores"].items():
             assert 0.0 < score < 1.0
-            assert score == 0.05  # Default score when no answer
+            assert score == 0.01  # Default score when no answer
 
     def test_grader_with_answer(self, client) -> None:
         """Test grader with answer."""

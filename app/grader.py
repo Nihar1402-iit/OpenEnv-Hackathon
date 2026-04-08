@@ -30,30 +30,30 @@ class TaskGrader:
         predicted = submitted_answer.get("customer_ids", [])
 
         if not isinstance(ground_truth, list) or not isinstance(predicted, list):
-            return 0.05
+            return 0.01
 
         ground_truth_set: Set[str] = set(ground_truth)
         predicted_set: Set[str] = set(predicted)
 
         if len(ground_truth_set) == 0:
-            return 0.95 if len(predicted_set) == 0 else 0.05
+            return 0.99 if len(predicted_set) == 0 else 0.01
 
         intersection = ground_truth_set & predicted_set
         # Raw score: fraction of correct answers found
         raw_score = len(intersection) / len(ground_truth_set)
 
-        # CRITICAL: Clamp BEFORE penalties to ensure max is 0.95, not 1.0
+        # CRITICAL: Clamp to (0.01, 0.99) — not (0.05, 0.95)
         # This prevents perfect matches from returning exactly 1.0
-        clamped_score = max(0.05, min(0.95, raw_score))
+        clamped_score = max(0.01, min(0.99, raw_score))
         
         # Penalize false positives (extra items returned that shouldn't be)
         false_positives = len(predicted_set - ground_truth_set)
         if false_positives > 0:
-            clamped_score = max(0.05, clamped_score - false_positives * 0.1)
+            clamped_score = max(0.01, clamped_score - false_positives * 0.1)
         
         # Defensive check: if somehow clamping didn't work, use safe default
         if not (0.0 < clamped_score < 1.0):
-            clamped_score = 0.05
+            clamped_score = 0.01
         
         # Ensure it's a Python float (not numpy or other numeric type)
         final_score = float(clamped_score)

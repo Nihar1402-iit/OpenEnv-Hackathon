@@ -102,7 +102,8 @@ def _log_step(task_id: str, step_idx: int, tool: str, arguments: Dict[str, Any],
 
 
 def _log_end(run_id: str, average_score: float, total_time_sec: float, task_scores: Dict[str, float]) -> None:
-    print("[END]")
+    success = average_score >= 0.99
+    print(f"[END] task_id=multi success={str(success).lower()} steps=0 score={average_score} rewards={average_score}")
     print(f"run_id={run_id}")
     print(f"average_score={average_score}")
     print(f"total_time_sec={total_time_sec}")
@@ -258,7 +259,7 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
     if final_answer:
         score = TaskGrader.grade_task(task, final_answer)
     else:
-        score = 0.05  # Minimum non-zero score for cases with no answer
+        score = 0.01  # Minimum non-zero score for cases with no answer
 
     if verbose:
         print(f"\nTask Score: {score:.2%}")
@@ -342,9 +343,9 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
                 print(f"\nFailed to run task {task_id}: {str(e)}")
             results[task_id] = {
                 "error": str(e),
-                "score": 0.05  # Minimum non-zero score for error cases
+                "score": 0.01  # Minimum non-zero score for error cases
             }
-            scores[task_id] = 0.05
+            scores[task_id] = 0.01
 
     total_time = time.time() - total_time
 
