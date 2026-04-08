@@ -433,7 +433,6 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
     # Get all tasks
     tasks = get_tasks()
     run_id = str(int(time.time()))
-    print(f"Total tasks loaded: {len(tasks)}")  # 🔥 Debug output
     _log_start(run_id, config["api_base"], config["model_name"], [t.task_id for t in tasks])
     results = {}
     scores = {}
@@ -516,10 +515,9 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
 def main():
     """Main entry point for the inference script."""
     try:
-        results = run_inference(verbose=True)
-        
-        # Print final results as JSON
-        print("\n" + json.dumps(results, indent=2, default=str))
+        # Run inference with verbose=False to suppress debug output
+        # Only structured logging ([START], [STEP], [END]) will be printed
+        results = run_inference(verbose=False)
         
         # Exit with appropriate code
         if results.get("error"):
