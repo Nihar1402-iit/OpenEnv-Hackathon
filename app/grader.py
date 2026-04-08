@@ -105,3 +105,21 @@ class TaskGrader:
         if not scores:
             return 0.0
         return sum(scores.values()) / len(scores)
+
+
+# 🔥 CRITICAL: Export graders dict for validator
+# Validator checks: from app.grader import GRADERS
+def _create_graders_dict():
+    """Create graders dict from task registry."""
+    from .tasks import get_tasks
+    
+    graders = {}
+    for task in get_tasks():
+        # Each task has a grader_id (same as task_id in our case)
+        graders[task.task_id] = lambda t=task, ans={}: TaskGrader.grade_task(t, ans)
+    
+    return graders
+
+
+# Initialize GRADERS at module level
+GRADERS = _create_graders_dict()
