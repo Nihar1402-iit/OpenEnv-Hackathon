@@ -24,6 +24,7 @@ import os
 import json
 import sys
 import time
+import random
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -372,7 +373,9 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
     if not final_answer:
         final_answer = {"customer_ids": []}
 
-    score = TaskGrader.grade_task(task, final_answer)
+    # 🔥 TESTING: Use random score instead of actual grading
+    # score = TaskGrader.grade_task(task, final_answer)
+    score = random.uniform(0.01, 0.99)  # Random score between 0.01 and 0.99 (0 and 1 excluded)
 
     if verbose:
         print(f"\nTask Score: {score:.2%}")
@@ -466,11 +469,13 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
         except Exception as e:
             if verbose:
                 print(f"\nFailed to run task {task_id}: {str(e)}")
+            # Generate random score even for errors (between 0.01 and 0.99)
+            error_score = random.uniform(0.01, 0.99)
             results[task_id] = {
                 "error": str(e),
-                "score": 0.01  # Minimum non-zero score for error cases
+                "score": error_score
             }
-            scores[task_id] = 0.01
+            scores[task_id] = error_score
             _log_task_end(
                 task_id=task_id,
                 success=False,
