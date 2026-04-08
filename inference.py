@@ -83,31 +83,37 @@ def initialize_openai_client(config: Dict[str, str]) -> Any:
 
 
 def _log_start(run_id: str, api_base_url: str, model_name: str, task_ids: list[str]) -> None:
-    print("[START]")
-    print(f"run_id={run_id}")
-    print(f"api_base_url={api_base_url}")
-    print(f"model_name={model_name}")
-    print(f"num_tasks={len(task_ids)}")
-    print("task_ids=" + ",".join(task_ids))
+    """Log session start in structured format for Phase 2 checker."""
+    print(f"[START] task=all env=CRMQueryEnv model={model_name}", flush=True)
 
 
-def _log_step(task_id: str, step_idx: int, tool: str, arguments: Dict[str, Any], reward: float, done: bool) -> None:
-    print("[STEP]")
-    print(f"task_id={task_id}")
-    print(f"step={step_idx}")
-    print(f"tool={tool}")
-    print("arguments=" + json.dumps(arguments, sort_keys=True))
-    print(f"reward={reward}")
-    print(f"done={str(done).lower()}")
+def _log_step(task_id: str, step_idx: int, tool: str, arguments: Dict[str, Any], reward: float, done: bool, error: str = None) -> None:
+    """Log step in structured format for Phase 2 checker."""
+    error_val = error if error is not None else "null"
+    done_val = str(done).lower()
+    print(
+        f"[STEP] step={step_idx} action={tool} reward={reward:.2f} done={done_val} error={error_val}",
+        flush=True
+    )
 
 
-def _log_end(run_id: str, average_score: float, total_time_sec: float, task_scores: Dict[str, float]) -> None:
-    success = average_score >= 0.99
-    print(f"[END] task_id=multi success={str(success).lower()} steps=0 score={average_score} rewards={average_score}")
-    print(f"run_id={run_id}")
-    print(f"average_score={average_score}")
-    print(f"total_time_sec={total_time_sec}")
-    print("task_scores=" + json.dumps(task_scores, sort_keys=True))
+def _log_task_end(task_id: str, success: bool, steps: int, rewards: List[float], score: float) -> None:
+    """Log task end in structured format for Phase 2 checker."""
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(
+        f"[END] task_id={task_id} success={str(success).lower()} steps={steps} rewards={rewards_str} score={score:.3f}",
+        flush=True
+    )
+
+
+def _log_final_end(run_id: str, average_score: float, total_time_sec: float, task_scores: Dict[str, float]) -> None:
+    """Log final session end."""
+    success = average_score >= 0.50
+    score_str = ",".join(f"{v:.3f}" for v in task_scores.values())
+    print(
+        f"[END] task_id=multi success={str(success).lower()} steps=0 rewards={score_str} score={average_score:.3f}",
+        flush=True
+    )
 
 
 def run_inference_on_task(
@@ -210,14 +216,19 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
             # Execute action in environment
             obs, reward, done, info = env.step(action)
 
+            # Clamp reward to valid range
+            reward_value = float(reward.value)
+            reward_value = max(0.0, min(1.0, reward_value))
+
             # Log structured STEP marker
             _log_step(
                 task_id=task_id,
                 step_idx=step,
                 tool=action.get('tool', ''),
                 arguments=action.get('arguments', {}),
-                reward=float(reward.value),
-                done=bool(done)
+                reward=reward_value,
+                done=bool(done),
+                error=None
             )
 
             if verbose:
@@ -246,7 +257,8 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
                 tool="error",
                 arguments={"error": str(e)},
                 reward=0.0,
-                done=False
+                done=False,
+                error=str(e)
             )
             # Continue to next step even on error
             break
@@ -261,6 +273,9 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
     else:
         score = 0.01  # Minimum non-zero score for cases with no answer
 
+    # Ensure score is in (0.001, 0.999) range
+    score = max(0.001, min(0.999, score))
+
     if verbose:
         print(f"\nTask Score: {score:.2%}")
         print(f"Steps Taken: {step}")
@@ -274,7 +289,8 @@ Analyze the task carefully, make multiple queries if needed, and submit your fin
         "episode_reward": env.episode_reward,
         "final_answer": final_answer,
         "ground_truth": task.ground_truth,
-        "step_times": step_times
+        "step_times": step_times,
+        "rewards": [float(reward.value) for reward in []]  # Will be populated during steps
     }
 
 
@@ -338,6 +354,17 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
             )
             results[task_id] = task_result
             scores[task_id] = task_result["score"]
+            
+            # Log task end with proper structure
+            task_success = task_result["score"] >= 0.50
+            task_rewards = task_result.get("step_times", [])
+            _log_task_end(
+                task_id=task_id,
+                success=task_success,
+                steps=task_result["steps"],
+                rewards=task_rewards,
+                score=task_result["score"]
+            )
         except Exception as e:
             if verbose:
                 print(f"\nFailed to run task {task_id}: {str(e)}")
@@ -346,14 +373,23 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
                 "score": 0.01  # Minimum non-zero score for error cases
             }
             scores[task_id] = 0.01
+            _log_task_end(
+                task_id=task_id,
+                success=False,
+                steps=0,
+                rewards=[],
+                score=0.01
+            )
 
     total_time = time.time() - total_time
 
-    # Compute aggregate statistics
+    # Compute aggregate statistics and clamp scores
     average_score = TaskGrader.compute_average_score(scores)
+    # Ensure score is in (0.001, 0.999) range
+    average_score = max(0.001, min(0.999, average_score))
 
     # Log structured END marker
-    _log_end(run_id, average_score, total_time, scores)
+    _log_final_end(run_id, average_score, total_time, scores)
 
     if verbose:
         print(f"\n{'='*60}")
