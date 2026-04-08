@@ -26,7 +26,14 @@ class TaskGrader:
         Returns:
             Score in (0.0, 1.0) - strictly between 0 and 1
         """
-        ground_truth = task.ground_truth.get("customer_ids", [])
+        # 🔥 DEFENSIVE: Handle None or invalid answer
+        if submitted_answer is None:
+            submitted_answer = {}
+        
+        if not isinstance(submitted_answer, dict):
+            submitted_answer = {}
+        
+        ground_truth = task.ground_truth.get("customer_ids", []) if task.ground_truth else []
         predicted = submitted_answer.get("customer_ids", [])
 
         if not isinstance(ground_truth, list) or not isinstance(predicted, list):
@@ -110,13 +117,23 @@ class TaskGrader:
 # 🔥 CRITICAL: Export graders dict for validator
 # Validator checks: from app.grader import GRADERS
 def _create_graders_dict():
-    """Create graders dict from task registry."""
+    """Create graders dict from task registry.
+    
+    Each grader is a function that takes an answer dict and returns a score.
+    Validator calls: GRADERS['task_id']({'customer_ids': [...]})
+    """
     from .tasks import get_tasks
     
     graders = {}
     for task in get_tasks():
-        # Each task has a grader_id (same as task_id in our case)
-        graders[task.task_id] = lambda t=task, ans={}: TaskGrader.grade_task(t, ans)
+        # 🔥 FIX: Use default argument binding to capture task at definition time
+        # This prevents closure issues where all lambdas reference the last task
+        def make_grader(task_obj):
+            def grader(answer):
+                return TaskGrader.grade_task(task_obj, answer)
+            return grader
+        
+        graders[task.task_id] = make_grader(task)
     
     return graders
 
