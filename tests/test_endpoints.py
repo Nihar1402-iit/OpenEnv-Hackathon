@@ -85,12 +85,20 @@ class TestEndpoints:
         assert "episode_reward" in data
 
     def test_grader_no_answer(self, client) -> None:
-        """Test grader with no answer."""
+        """Test grader with no answer - should return default scores."""
         client.post("/reset")
 
         response = client.post("/grader")
 
-        assert response.status_code == 400
+        # Should return 200 with default scores (0.05 for each task)
+        assert response.status_code == 200
+        data = response.json()
+        assert "scores" in data
+        assert len(data["scores"]) == 4
+        # All scores should be valid (strictly between 0 and 1)
+        for task_id, score in data["scores"].items():
+            assert 0.0 < score < 1.0
+            assert score == 0.05  # Default score when no answer
 
     def test_grader_with_answer(self, client) -> None:
         """Test grader with answer."""
@@ -108,11 +116,11 @@ class TestEndpoints:
 
         assert response.status_code == 200
         data = response.json()
-        assert "task_id" in data
-        assert "score" in data
-        assert 0.0 <= data["score"] <= 1.0
-        assert "ground_truth" in data
-        assert "submitted_answer" in data
+        assert "scores" in data
+        assert len(data["scores"]) == 4
+        # All scores should be valid (strictly between 0 and 1)
+        for score in data["scores"].values():
+            assert 0.0 < score < 1.0
 
     def test_step_sequence(self, client) -> None:
         """Test sequence of steps."""
