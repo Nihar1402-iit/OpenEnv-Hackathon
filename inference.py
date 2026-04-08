@@ -475,7 +475,7 @@ def run_inference(verbose: bool = True) -> Dict[str, Any]:
                 success=False,
                 steps=0,
                 rewards=[],
-                score=0.01
+                score=error_score
             )
 
     total_time = time.time() - total_time
