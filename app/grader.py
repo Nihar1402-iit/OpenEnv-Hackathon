@@ -107,11 +107,13 @@ class TaskGrader:
             scores: Dict mapping task_id to score
         
         Returns:
-            Average score
+            Average score strictly in (0, 1)
         """
         if not scores:
-            return 0.0
-        return sum(scores.values()) / len(scores)
+            return 0.01
+        avg = sum(scores.values()) / len(scores)
+        # Ensure strictly in (0, 1)
+        return max(0.01, min(0.99, float(avg)))
 
 
 # 🔥 CRITICAL: Export graders dict for validator
