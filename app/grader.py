@@ -37,13 +37,17 @@ class TaskGrader:
         predicted = submitted_answer.get("customer_ids", [])
 
         if not isinstance(ground_truth, list) or not isinstance(predicted, list):
-            return 0.01
+            score = 0.001
+            score = max(0.001, min(0.999, float(score)))
+            return score
 
         ground_truth_set: Set[str] = set(ground_truth)
         predicted_set: Set[str] = set(predicted)
 
         if len(ground_truth_set) == 0:
-            return 0.99 if len(predicted_set) == 0 else 0.01
+            score = 0.999 if len(predicted_set) == 0 else 0.001
+            score = max(0.001, min(0.999, float(score)))
+            return score
 
         intersection = ground_truth_set & predicted_set
         # Raw score: fraction of correct answers found
@@ -51,20 +55,21 @@ class TaskGrader:
 
         # CRITICAL: Clamp to (0.01, 0.99) — not (0.05, 0.95)
         # This prevents perfect matches from returning exactly 1.0
-        clamped_score = max(0.01, min(0.99, raw_score))
+        clamped_score = max(0.001, min(0.999, raw_score))
         
         # Penalize false positives (extra items returned that shouldn't be)
         false_positives = len(predicted_set - ground_truth_set)
         if false_positives > 0:
-            clamped_score = max(0.01, clamped_score - false_positives * 0.1)
-        
+            clamped_score = max(0.001, clamped_score - false_positives * 0.1)
+
         # Defensive check: if somehow clamping didn't work, use safe default
         if not (0.0 < clamped_score < 1.0):
-            clamped_score = 0.01
-        
+            clamped_score = 0.001
+
         # Ensure it's a Python float (not numpy or other numeric type)
         final_score = float(clamped_score)
         
+        final_score = max(0.001, min(0.999, float(final_score)))
         # Final assertion: guarantee the invariant
         assert 0.0 < final_score < 1.0, (
             f"CRITICAL: Score {final_score} violates (0, 1) constraint. "
@@ -94,6 +99,7 @@ class TaskGrader:
             task_id = task.task_id
             answer = submitted_answers.get(task_id, {})
             score = TaskGrader.grade_task(task, answer)
+            score = max(0.001, min(0.999, float(score)))
             results[task_id] = score
 
         return results
@@ -110,10 +116,13 @@ class TaskGrader:
             Average score strictly in (0, 1)
         """
         if not scores:
-            return 0.01
-        avg = sum(scores.values()) / len(scores)
-        # Ensure strictly in (0, 1)
-        return max(0.01, min(0.99, float(avg)))
+            avg = 0.001
+        else:
+            avg = sum(scores.values()) / len(scores)
+
+        # Ensure strictly in (0, 1) with Phase 2 bounds
+        avg = max(0.001, min(0.999, float(avg)))
+        return avg
 
 
 # 🔥 CRITICAL: Export graders dict for validator
