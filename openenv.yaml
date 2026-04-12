@@ -79,10 +79,7 @@ tasks:
     difficulty: easy
     max_attempts: 5
     scoring: 0.0-1.0 partial credit
-    grader:
-      type: http
-      endpoint: /grader
-      task_id: task_easy_001
+    grader: standalone_graders.grade_task_task_easy_001
     ground_truth:
       customer_ids: [C005]
 
@@ -91,10 +88,7 @@ tasks:
     difficulty: medium
     max_attempts: 10
     scoring: 0.0-1.0 partial credit
-    grader:
-      type: http
-      endpoint: /grader
-      task_id: task_medium_001
+    grader: standalone_graders.grade_task_task_medium_001
     ground_truth:
       customer_ids: [C001, C004, C006, C009, C011, C014, C016, C019]
 
@@ -103,10 +97,7 @@ tasks:
     difficulty: hard
     max_attempts: 15
     scoring: 0.0-1.0 partial credit
-    grader:
-      type: http
-      endpoint: /grader
-      task_id: task_hard_001
+    grader: standalone_graders.grade_task_task_hard_001
     ground_truth:
       customer_ids: [C001, C004, C006, C009, C011, C014, C016, C019]
 
@@ -115,10 +106,7 @@ tasks:
     difficulty: extreme
     max_attempts: 20
     scoring: 0.0-1.0 partial credit
-    grader:
-      type: http
-      endpoint: /grader
-      task_id: task_extreme_001
+    grader: standalone_graders.grade_task_task_extreme_001
     ground_truth:
       customer_ids: [C001, C004, C006, C009, C011, C014, C016, C019]
 
